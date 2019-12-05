@@ -33,9 +33,10 @@ public class RequeteCHECKINAP implements Requete, Serializable{
     public static int BOOKING = 2;
     public static int BUY = 3;
     public static int CLOSE = 4;
-    public static int REQUEST_E_MAIL = 10;
-    public static int REQUEST_TEMPORARY_KEY = 20;
     public static int IS_CARTE_VALIDE = 5;
+    public static int MAILING_LOG = 6;
+    public static int NEW_MAIL = 7;
+    public static int LIST_MAILS = 8;
     public static Hashtable tableLogin = new Hashtable();
     static
     {

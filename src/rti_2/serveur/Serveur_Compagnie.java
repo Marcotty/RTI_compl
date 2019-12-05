@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import javax.swing.table.DefaultTableModel;
 import rti_2.checkinap.requetereponse.ConsoleServeur;
+import rti_compl.mailing.Service_Mailing;
 
 /**
  *
@@ -25,9 +26,13 @@ public class Serveur_Compagnie extends javax.swing.JFrame implements ConsoleServ
      */
     ThreadServeur ts;
     private int port;
+    private int PORT_MAIL;
     public Serveur_Compagnie() {
         initComponents();
         TraceEvenements("serveur#initialisation#main");
+        PORT_MAIL = Integer.parseInt(ChargerPortMail());
+        Service_Mailing mailing = new Service_Mailing(PORT_MAIL);
+        TraceEvenements("serveur#mailing_init#main");
         TFPort.setText(ChargerPort());
         System.out.println("Config port :  " + ChargerPort());
     }
@@ -255,6 +260,22 @@ public class Serveur_Compagnie extends javax.swing.JFrame implements ConsoleServ
             prop.load(input);
             
             return prop.getProperty("portServeur");
+        }
+        catch(IOException e)
+        {
+            System.out.println(e);
+        }
+        return "";
+    }
+    private String ChargerPortMail() {
+        try
+        {
+            InputStream input = new FileInputStream("config.properties");
+            Properties prop = new Properties();
+            
+            prop.load(input);
+            
+            return prop.getProperty("portMail");
         }
         catch(IOException e)
         {

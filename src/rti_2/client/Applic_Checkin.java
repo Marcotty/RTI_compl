@@ -14,6 +14,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Properties;
+import javax.mail.Folder;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.NoSuchProviderException;
+import javax.mail.Session;
+import javax.mail.Store;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import static rti_2.network.NetworkLibrary.EnvoyerRequete;
 import static rti_2.network.NetworkLibrary.RecevoirReponse;
 
@@ -29,9 +39,11 @@ public class Applic_Checkin extends javax.swing.JFrame {
     private ObjectInputStream ois;
     private ObjectOutputStream oos; 
     private Socket cliSocket;
+    private Socket cliSockMail;
     private String adresse;
     private int port;
-    
+    String user, pass;
+    private ThreadMailing th;
     public Applic_Checkin() {
         initComponents();
         
@@ -93,6 +105,9 @@ public class Applic_Checkin extends javax.swing.JFrame {
         TFPassagersBuy = new javax.swing.JTextField();
         TFCarte = new javax.swing.JTextField();
         BEnvoyer = new javax.swing.JButton();
+        TFMail = new javax.swing.JTextField();
+        jLabel9 = new javax.swing.JLabel();
+        BVoir = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         BLogout = new javax.swing.JMenuItem();
@@ -100,12 +115,7 @@ public class Applic_Checkin extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        TFUser.setText("a");
-        TFUser.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                TFUserActionPerformed(evt);
-            }
-        });
+        TFUser.setText("marcotty");
 
         jLabel1.setText("user :");
 
@@ -116,7 +126,7 @@ public class Applic_Checkin extends javax.swing.JFrame {
             }
         });
 
-        TFPass.setText("b");
+        TFPass.setText("azerty");
 
         javax.swing.GroupLayout PanelLoginLayout = new javax.swing.GroupLayout(PanelLogin);
         PanelLogin.setLayout(PanelLoginLayout);
@@ -250,7 +260,7 @@ public class Applic_Checkin extends javax.swing.JFrame {
                     .addComponent(TFPassagersBook, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addComponent(BDemander)
-                .addContainerGap(85, Short.MAX_VALUE))
+                .addContainerGap(82, Short.MAX_VALUE))
         );
 
         jLabel5.setText("Conducteur :");
@@ -320,6 +330,15 @@ public class Applic_Checkin extends javax.swing.JFrame {
                 .addComponent(BEnvoyer))
         );
 
+        jLabel9.setText("Mail :");
+
+        BVoir.setText("Voir");
+        BVoir.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                BVoirActionPerformed(evt);
+            }
+        });
+
         jMenu1.setText("Menu");
 
         BLogout.setText("Logout");
@@ -341,40 +360,58 @@ public class Applic_Checkin extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(PanelLogin, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(PanelBook, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(PanelBuy, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(PanelCommandes, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(LReponse)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(BClose, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(LReponse)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addComponent(jLabel9)
+                                .addGap(18, 18, 18)
+                                .addComponent(TFMail, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(12, 12, 12)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(BClose, javax.swing.GroupLayout.PREFERRED_SIZE, 149, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(15, 15, 15)
+                                .addComponent(BVoir)))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(10, 10, 10)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(PanelCommandes, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(PanelLogin, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(PanelBook, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(PanelBuy, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addContainerGap(14, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(25, 25, 25)
-                        .addComponent(PanelLogin, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(PanelCommandes, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(22, 22, 22)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(PanelCommandes, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(PanelLogin, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(31, 31, 31)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(PanelBuy, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(PanelBook, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(BClose)
-                    .addComponent(LReponse, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(33, 33, 33))
+                    .addComponent(PanelBook, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(LReponse, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(BClose))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(TFMail, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel9)
+                    .addComponent(BVoir))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
@@ -382,13 +419,17 @@ public class Applic_Checkin extends javax.swing.JFrame {
 
     private void BLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BLoginActionPerformed
         // TODO add your handling code here:
-        //PanelLogin.setVisible(false);
+        
+        //connexion au service mailing
+        ConnectMailing();
+        //login
         RequeteLogin(TFUser.getText(), TFPass.getText());
     }//GEN-LAST:event_BLoginActionPerformed
 
     private void BLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BLogoutActionPerformed
         // TODO add your handling code here:
         LReponse.setText("Logout !");
+        PanelCommandes.setVisible(false);
         PanelLogin.setVisible(true);
     }//GEN-LAST:event_BLogoutActionPerformed
 
@@ -417,9 +458,10 @@ public class Applic_Checkin extends javax.swing.JFrame {
         Buy();
     }//GEN-LAST:event_BEnvoyerActionPerformed
 
-    private void TFUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_TFUserActionPerformed
+    private void BVoirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BVoirActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_TFUserActionPerformed
+        th.getMessages();
+    }//GEN-LAST:event_BVoirActionPerformed
 
     /**
      * @param args the command line arguments
@@ -465,6 +507,7 @@ public class Applic_Checkin extends javax.swing.JFrame {
     private javax.swing.JButton BEnvoyer;
     private javax.swing.JButton BLogin;
     private javax.swing.JMenuItem BLogout;
+    private javax.swing.JButton BVoir;
     private javax.swing.JTextField LReponse;
     private javax.swing.JPanel PanelBook;
     private javax.swing.JPanel PanelBuy;
@@ -474,6 +517,7 @@ public class Applic_Checkin extends javax.swing.JFrame {
     private javax.swing.JTextField TFCode;
     private javax.swing.JTextField TFConducteur;
     private javax.swing.JTextField TFImmatriculation;
+    private javax.swing.JTextField TFMail;
     private javax.swing.JTextField TFPass;
     private javax.swing.JTextField TFPassagersBook;
     private javax.swing.JTextField TFPassagersBuy;
@@ -486,12 +530,15 @@ public class Applic_Checkin extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
+    private javax.swing.JLabel jLabel9;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     // End of variables declaration//GEN-END:variables
 
     private void RequeteLogin(String user, String password) {
+        this.user = user;
+        this.pass = password;
         // Construction de la requête
         String chargeUtile = user;
         chargeUtile = chargeUtile + "#" + password;
@@ -510,6 +557,7 @@ public class Applic_Checkin extends javax.swing.JFrame {
             PanelLogin.setVisible(false);
             PanelCommandes.setVisible(true);
             this.pack();
+            LoginMailing(user, password);
         }
         else
         {
@@ -563,6 +611,75 @@ public class Applic_Checkin extends javax.swing.JFrame {
             LReponse.setText("Achat réussi !");
         else if(rep.GetCode() == ReponseCHECKINAP.BUY_NOK)
             LReponse.setText("Achat échoué !");
+        
+        System.out.println("Envoi d'un mail de facturation");
+        EnvoyerMail();
+    }
+    private void EnvoyerMail()
+    {
+        Properties prop;
+        Session sess;
+        Store st;
+        Folder f;
+        String host = "u2.tech.hepl.local";
+        //connexion
+        prop = System.getProperties();
+        System.out.println("MAILING | Création de la session mail");
+        prop.put("mail.pop3.host", host);
+        prop.put("mail.disable.top", "true");
+
+        sess = Session.getDefaultInstance(prop, null);
+        //prop.list(System.out);
+
+        try
+        {
+            System.out.println("MAILING | Obtention d'un objet Store");
+            st = sess.getStore("pop3");
+            st.connect(host, user, pass);
+
+            System.out.println("Obtention d'un objet folder");
+            //f = st.getFolder("INBOX");
+            //f.open(Folder.READ_ONLY);
+        }
+        catch(NoSuchProviderException e)
+        {
+            System.out.println("Erreur sur provider : " + e.getMessage());
+        }
+        catch(MessagingException e)
+        {
+            System.out.println("Erreur sur provider : " + e.getMessage());
+        }
+        catch(Exception e)
+        {
+            System.out.println("Erreur sur provider : " + e.getMessage());
+        }
+        
+        
+        //envoi
+        prop.put("mail.smtp.host", host);
+        
+        try
+        {
+           System.out.println("Création du message");
+           String exp = user + "@u2.tech.hepl.local";
+           String dest = "marcotty@u2.tech.hepl.local";
+           String sujet = "Facture res " + "";
+           String texte = "";
+           
+           MimeMessage msg = new MimeMessage(sess);
+           msg.setFrom(new InternetAddress(exp));
+           msg.setRecipient(Message.RecipientType.TO, new InternetAddress(dest));
+           msg.setSubject(sujet);
+           msg.setText(texte);
+           
+           System.out.println("Envoi du message");
+           Transport.send(msg);
+           System.out.println("Message envoyé");
+        }
+        catch(MessagingException e)
+        {
+          System.out.println("Erreur sur envoi msg : " + e.getMessage());  
+        }
     }
     private void RequeteClose() {
         
@@ -579,5 +696,30 @@ public class Applic_Checkin extends javax.swing.JFrame {
         }
         else
             LReponse.setText("Close échoué !");
+    }
+
+    private void ConnectMailing() {
+        
+        try
+        {
+            cliSockMail = new Socket("0.0.0.0", 50056);
+            System.out.println("CLIENT | Connexion Mailing" + cliSockMail.getInetAddress().toString());
+        }
+        catch (UnknownHostException e)
+        { System.err.println("Erreur ! Host non trouvé [" + e + "]");
+        }
+        catch (IOException e)
+        { System.err.println("Erreur ! Pas de connexion ? [" + e + "]");
+        } 
+        System.out.println("CLIENT | Connexion au service mailing OK");
+    }
+
+    private void LoginMailing(String user, String password) {
+        String chargeUtile = user + "#" + password;
+        
+        System.out.println("CLIENT | Envoi requete Mailing avec "+ chargeUtile);
+        EnvoyerRequete(cliSockMail, RequeteCHECKINAP.MAILING_LOG, chargeUtile);
+        th = new ThreadMailing(cliSockMail, TFMail, BVoir);
+        th.start();
     }
 }

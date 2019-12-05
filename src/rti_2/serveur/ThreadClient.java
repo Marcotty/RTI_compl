@@ -41,6 +41,7 @@ import static rti_2.network.NetworkLibrary.RecevoirReponse;
 public class ThreadClient extends Thread {
     private SourceTaches tachesAExecuter;
     private String nom;
+    private String user, pass, mail;
     private Socket CSocket = null;
     private Runnable tacheEnCours;
     private String chargeUtile;
@@ -244,9 +245,66 @@ public class ThreadClient extends Thread {
     } 
 
     private boolean LoginExiste(String user, String pass) {
-        if(tableLogin.containsKey(user))
+        /*if(tableLogin.containsKey(user))
             if(tableLogin.get(user).equals(pass))
                 return true;
+        */
+        MyInstruction sgbd;
+        sgbd = new MyInstruction();
+        System.out.println("SERVER | LOGINExiste() user : " + user + " pass : " + pass);
+        try
+        {
+            Class.forName("com.mysql.jdbc.Driver");
+        }
+        catch(ClassNotFoundException e)
+        {
+            JOptionPane.showMessageDialog(null, "driver introuvable", "Erreur driver", JOptionPane.ERROR_MESSAGE); 
+        }
+        System.out.println("SERVER | Connexion bd_ferries OK");
+        sgbd.setAdresse("jdbc:mysql://localhost:3306/BD_FERRIES");
+        sgbd.setLogin("root");
+        sgbd.setPassword("root");
+        try
+        {
+            sgbd.Connexion();
+        }
+        catch(SQLException e)
+        {
+            JOptionPane.showMessageDialog(null, "connexion à la BD impossible", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+        try
+        {
+            sgbd.SelectionCond("voyageurs", "nom LIKE '"+ user + "'");
+            if(sgbd.getResultat().next())
+            {
+               if(sgbd.getResultat().getString("nom") != null)
+                {
+                    System.out.println("SERVER | user : " + sgbd.getResultat().getString("nom"));
+                    this.user = user;                   
+                    if(sgbd.getResultat().getString("password") != null)
+                    {
+                        System.out.println("SERVER | pass : " + sgbd.getResultat().getString("password"));
+
+                        this.pass = pass;
+                        //sgbd.SelectionCond("voyageurs", "nom LIKE '"+ user + "'");
+                        //if(sgbd.getResultat().next())
+                        //{
+                        if(sgbd.getResultat().getString("mail") != null)
+                        {
+                            this.mail = sgbd.getResultat().getString("mail");
+                        }
+                        //}
+                        System.out.println("SERVER | login ok ! user : " + this.user + " pass : " + this.pass + " mail : " + mail);
+                        return true;
+                    }
+                    
+                }
+            }
+        }
+        catch(SQLException e)
+        {
+            JOptionPane.showMessageDialog(null, "recup reservation erreur", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
         return false;
     }
     private boolean BookingExiste(String code) {
@@ -399,7 +457,7 @@ public class ThreadClient extends Thread {
     private void ConnexionServeurCarte() {
         try {
             System.out.println("Try connexion au serveur carte");
-            socketServeurCard = new Socket("0.0.0.0", 50055);
+            socketServeurCard = new Socket("0.0.0.0", 50051);
         } 
         catch (UnknownHostException e)
         { System.err.println("Erreur Serveur Cartes ! Host non trouvé [" + e + "]");

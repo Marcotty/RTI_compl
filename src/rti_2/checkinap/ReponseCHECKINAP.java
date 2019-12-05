@@ -23,6 +23,7 @@ public class ReponseCHECKINAP  implements Reponse, Serializable{
     public static int CLOSE_NOK = 402;
     public static int CARTE_OK = 501;
     public static int CARTE_NOK = 502;
+    public static int LIST_MAILS = 601;
     private int codeRetour;
     private String chargeUtile;
     public ReponseCHECKINAP(int c, String chu)

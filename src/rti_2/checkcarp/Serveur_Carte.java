@@ -31,7 +31,7 @@ public class Serveur_Carte {
     private Socket CSocket;
     private MyInstruction sgbd;
     private String driver;
-    private int PORT_CARD = 50055;
+    private int PORT_CARD = 50051;
 
     public Serveur_Carte() {
         Config();
